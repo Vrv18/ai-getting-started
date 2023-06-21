@@ -19,7 +19,15 @@ export async function POST(request: Request) {
   const pineconeIndex = client.Index(process.env.PINECONE_INDEX || "");
 
   const vectorStore = await PineconeStore.fromExistingIndex(
-    new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY }),
+    new OpenAIEmbeddings(
+      { 
+        openAIApiKey: process.env.OPENAI_API_KEY 
+      },
+      {
+        basePath: "https://api.portkey.ai/v1/proxy",
+        baseOptions: { headers: { "x-portkey-api-key": process.env.PORTKEY_API_KEY , "x-portkey-mode": "proxy openai" },},
+      }            
+    ),
     { pineconeIndex }
   );
 
@@ -29,7 +37,12 @@ export async function POST(request: Request) {
     modelName: "gpt-3.5-turbo-16k",
     openAIApiKey: process.env.OPENAI_API_KEY,
     callbackManager: CallbackManager.fromHandlers(handlers),
-  });
+  },
+  {
+    basePath: "https://api.portkey.ai/v1/proxy",
+    baseOptions: { headers: { "x-portkey-api-key": process.env.PORTKEY_API_KEY , "x-portkey-mode": "proxy openai" },},
+  }            
+ );
 
   const chain = VectorDBQAChain.fromLLM(model, vectorStore, {
     k: 1,
